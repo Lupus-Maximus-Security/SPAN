@@ -42,6 +42,7 @@ from setools.policyrep import TypeAttribute as PolicyRepTypeAttribute
 from setools.diff import PolicyDifference
 
 from . import indexed_terulequery
+from . import mermaid as _mermaid
 
 pd.options.display.max_rows = 2000
 pd.set_option("max_colwidth", 2000)
@@ -303,7 +304,6 @@ def collect_types(p, raw, expand_attrs=True):
         data.append({"Type": Type(t), "Conditional": cond, "Permissions": sorted(v)})
 
     df = pd.DataFrame(data)[["Type", "Conditional", "Permissions"]]
-    df.style.map(dataframe_hide_none)
 
     return df
 
@@ -486,7 +486,6 @@ class Policy(se.SELinuxPolicy):
             return None
 
         df = pd.DataFrame(data)[self.BASE_RULE_ATTRS + list(extra_indexes) + ["cond"]]
-        df.style.map(dataframe_hide_none)
 
         return df
 
@@ -785,7 +784,6 @@ class Policy(se.SELinuxPolicy):
                 append_row(d, to_conditional=t_c[d])
 
         df = pd.DataFrame(data)[["type", "from_conditional", "to_conditional"]]
-        df.style.map(dataframe_hide_none)
 
         return df
 
@@ -926,7 +924,6 @@ class Policy(se.SELinuxPolicy):
             )
 
         df = pd.DataFrame(data)[["name", "attributes"]]
-        df.style.map(dataframe_hide_none)
 
         return df
 
@@ -1108,21 +1105,39 @@ domain_summary_template = """
 
 {attributes}
 
+#### MLS Attributes
+
+{mls_attributes}
+
 #### Domain Transitions In
+
+{dta_in_diagram}
 
 {dta_in}
 
 #### Domain Transitions Out
 
+{dta_out_diagram}
+
 {dta_out}
 
 #### Entrypoints
+
+{entrypoints_diagram}
 
 {entrypoints}
 
 #### Non-Process Transitions
 
 {other_trans}
+
+#### MLS Range Transitions (as source)
+
+{mls_range_trans_out}
+
+#### MLS Range Transitions (as target)
+
+{mls_range_trans_in}
 
 #### Roles
 
@@ -1134,9 +1149,13 @@ domain_summary_template = """
 
 #### File Read Permissions
 
+{fread_diagram}
+
 {fread}
 
 #### File Write Permissions
+
+{fwrite_diagram}
 
 {fwrite}
 
@@ -1162,6 +1181,29 @@ def domain_summary_raw(p, domain):
     data = {
         "domain": domain,
         "attributes": markdown_list(p.attributes_for_type(domain)),
+        "mls_attributes": markdown_list(
+            [a for a in p.attributes_for_type(domain) if "mls" in str(a).lower()]
+        ),
+        "mls_range_trans_out": markdown_code_from_results(
+            sorted(
+                se.MLSRuleQuery(
+                    p,
+                    source=domain,
+                    ruletype=[se.MLSRuletype.range_transition],
+                ).results(),
+                key=str,
+            )
+        ),
+        "mls_range_trans_in": markdown_code_from_results(
+            sorted(
+                se.MLSRuleQuery(
+                    p,
+                    target=domain,
+                    ruletype=[se.MLSRuletype.range_transition],
+                ).results(),
+                key=str,
+            )
+        ),
         "dta_in": markdown_list(
             [
                 x.source
@@ -1227,6 +1269,10 @@ def domain_summary_raw(p, domain):
             )
         ),
     }
+
+    for section, builder in _mermaid.SECTION_BUILDERS.items():
+        diagram = builder(p, domain)
+        data[section + "_diagram"] = "" if diagram.is_empty() else diagram.to_markdown()
 
     return domain_summary_template.format(**data)
 
