@@ -7,3 +7,5 @@ setools>=4.0
 sh
 skin==0.0.7
 fabric
+papermill
+nbconvert

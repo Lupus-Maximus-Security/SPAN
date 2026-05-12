@@ -61,3 +61,72 @@ After this, you should install setools 4. Then follow the instructions described
 
 Go to examples and start Jupyter notebook: e.g., jupyter-notebook. This will open a browser window listing the
  contents of the directory. From there you can explore the example notebooks (start with SPAN Example).
+
+# Module Notebook Builder
+
+`span.module_notebook_builder` is a CLI tool that turns a CSV of (module, RPM) rows into one executed Jupyter notebook
+and one rendered Markdown file per module. It walks each module's RPMs, picks out the executables and policy modules
+(`.pp` files), looks up each executable's SELinux entrypoint type from a file_contexts database, and hands the result
+to a papermill template that you control.
+
+## Usage
+
+```
+python -m span.module_notebook_builder \
+    --csv modules.csv \
+    --policy /path/to/policy.30 \
+    --file-contexts /path/to/file_contexts \
+    --template templates/module_review.ipynb \
+    --outdir build/module_notebooks
+```
+
+Optional flags:
+
+* `--modules httpd,mariadb` — only build the listed modules.
+* `--kernel python3` — Jupyter kernel name passed to papermill (default `python3`).
+* `--keep-going` — on per-module failure, log and continue with the next module.
+
+## CSV format
+
+Two columns: module name, RPM path. The module name may repeat to group RPMs under one logical module. Blank lines and
+`#`-comments are skipped. A header row is auto-detected and dropped. RPM paths may be absolute or relative to the CSV.
+
+```
+module_name,rpm_path
+httpd,/srv/rpms/httpd-2.4.59-1.x86_64.rpm
+httpd,/srv/rpms/mod_ssl-2.4.59-1.x86_64.rpm
+mariadb,/srv/rpms/mariadb-server-10.5.21-1.x86_64.rpm
+```
+
+## Template contract
+
+The template must declare a parameters cell (tag `parameters`, papermill convention) with these names:
+
+```python
+module_name      = ""
+policy_path      = ""
+rpms             = []
+policy_modules   = []
+executables      = []   # each: {path, entrypoint_type, is_entrypoint, rpms, mode}
+```
+
+Each `executables` entry already includes `is_entrypoint`, set to True only when the resolved type appears as a
+`file:entrypoint` target somewhere in the supplied policy. The template author decides what to render from there
+(typically `span.load_policy(policy_path)` followed by `domain_summary` calls).
+
+## Outputs
+
+For each module, two files land in `--outdir`:
+
+* `<slug>.ipynb` — the executed notebook.
+* `<slug>.md` — the Markdown export of the executed notebook. An accompanying `<slug>_files/` directory appears only
+  if the notebook embedded images.
+
+`<slug>` is the module name with characters outside `[A-Za-z0-9_.-]` replaced by `_`.
+
+## Requirements
+
+The tool depends on `papermill` and `nbconvert` (both listed in `python_requirements.txt`). The `rpm` CLI must be on
+PATH. File-contexts resolution prefers libselinux's Python binding (`import selinux`) when available; otherwise it
+falls back to a pure-Python parser that approximates libselinux specificity ordering — accurate enough for review
+work but consult libselinux on production-critical lookups.

@@ -548,6 +548,10 @@ class Policy(se.SELinuxPolicy):
 
     def terules_query(self, ignore=[], info_flow_weight_for_access_filter=1, **args):
         r = self.terules_query_simple(**args)
+
+        if r is None:
+            return None
+        
         perms_cache = {}
         out = []
         for _, row in r.iterrows():
@@ -1072,6 +1076,9 @@ def pp_markdown(markdown):
 
 
 def as_str(l):
+    if l is None:
+        return ""
+    
     return [str(x) for x in l]
 
 
