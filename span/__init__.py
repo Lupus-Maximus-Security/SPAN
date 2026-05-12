@@ -25,8 +25,44 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+__version__ = "1.0.0"
+
 from .span import *
 from .domain_categories import DomainCategories
 from .indexed_terulequery import *
 from .domain_summary_to_word import *
 
+__all__ = [
+    "__version__",
+    # span.span — core policy API
+    "load_policy",
+    "load_policies_from_config",
+    "Policy",
+    "Type",
+    "TypeAttribute",
+    "wrap",
+    "domain_summary_raw",
+    "collect_types",
+    "filter_types",
+    "type_names",
+    "cond_expr",
+    "pp",
+    # span.span — notebook/markdown helpers
+    "pp_markdown",
+    "as_str",
+    "as_strset",
+    "markdown_code_from_results",
+    "markdown_list",
+    # span.span — reference policy / diff
+    "diff_to_html",
+    "RefPolicySource",
+    "load_refpolicy_source",
+    # span.domain_categories
+    "DomainCategories",
+    # span.indexed_terulequery
+    "build_index_if_needed",
+    "get_type_names",
+    # span.domain_summary_to_word
+    "output_summary",
+    "run",
+]

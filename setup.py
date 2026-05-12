@@ -1,15 +1,5 @@
-#!/usr/bin/env python
+# Minimal shim for tools that require setup.py.
+# All project metadata and dependencies are declared in pyproject.toml.
+from setuptools import setup
 
-from distutils.core import setup
-
-reqs = [line for line in open("python_requirements.txt") if line[0] != '#']
-
-setup(name='span',
-      version='1.0',
-      description='Utilities for Selinux policy analysis in Jupyter Notebook',
-      author='Karl MacMillan',
-      author_email='karlwmacmillan@gmail.com',
-      url='https://www.github.com/QuarkSecurity/SPAN',
-      packages=['span'],
-      install_requires=reqs
-     )
+setup()

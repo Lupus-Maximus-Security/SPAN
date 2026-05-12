@@ -33,10 +33,24 @@ $ source venv/bin/activate
 
 ## Installing SPAN
 
-You can install SPAN with:
+Install SPAN and all its dependencies from the project root:
 
 ```
-$ python -m pip install .
+$ pip install .
+```
+
+For development, install in editable mode so changes to `span/` take effect
+immediately without reinstalling:
+
+```
+$ pip install -e .
+```
+
+All dependencies are declared in `pyproject.toml`. If you need a pinned lock
+file for reproducible dev environments, generate one after installing:
+
+```
+$ pip freeze > requirements.txt
 ```
 
 ## MacOS Support
@@ -126,7 +140,7 @@ For each module, two files land in `--outdir`:
 
 ## Requirements
 
-The tool depends on `papermill` and `nbconvert` (both listed in `python_requirements.txt`). The `rpm` CLI must be on
+The tool depends on `papermill` and `nbconvert` (both listed in `requirements.txt`). The `rpm` CLI must be on
 PATH. File-contexts resolution prefers libselinux's Python binding (`import selinux`) when available; otherwise it
 falls back to a pure-Python parser that approximates libselinux specificity ordering — accurate enough for review
 work but consult libselinux on production-critical lookups.
