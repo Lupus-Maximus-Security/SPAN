@@ -28,6 +28,10 @@ venv/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!packaging/span.spec
+
+# RPM build output
+dist-rpm/
 
 # Installer logs
 pip-log.txt

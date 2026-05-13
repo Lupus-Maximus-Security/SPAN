@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+recursive-include examples *.sh *.ipynb *.csv
+recursive-include specs *.md

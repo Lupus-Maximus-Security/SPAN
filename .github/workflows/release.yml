@@ -1,0 +1,77 @@
+name: Release
+
+# Builds the release artifacts and attaches them to the GitHub Release
+# that triggered the run:
+#   * source distribution  (span-<version>.tar.gz)
+#   * wheel                (span-<version>-py3-none-any.whl)
+#   * RPM + SRPM for RHEL 9 and RHEL 10, x86_64
+#
+# workflow_dispatch is supported for test runs — it builds everything and
+# leaves the results as workflow artifacts but does not touch any Release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  python-dist:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+
+  rpm:
+    name: Build RPM (RHEL ${{ matrix.rhel }}, x86_64)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rhel: ["9", "10"]
+    container:
+      image: registry.access.redhat.com/ubi${{ matrix.rhel }}/ubi:latest
+    steps:
+      # Installed before checkout so actions/checkout does a real git
+      # clone — build-rpm.sh needs a .git directory for `git archive`.
+      - name: Install build dependencies
+        run: |
+          dnf -y install \
+            rpm-build python3-pip python3-devel \
+            git-core findutils sed gzip tar gcc
+      - uses: actions/checkout@v4
+      - name: Trust workspace for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Build RPM
+        run: ./packaging/build-rpm.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm-el${{ matrix.rhel }}
+          path: dist-rpm/*
+
+  publish:
+    name: Attach artifacts to release
+    needs: [python-dist, rpm]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
