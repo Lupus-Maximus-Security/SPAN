@@ -15,7 +15,45 @@ write queries and text together at the same time. You can get a feel for what's 
 [Regex Golf from XKCD](http://nbviewer.jupyter.org/url/norvig.com/ipython/xkcd1313.ipynb). There is also the more
 official (and boring) [introduction](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/).
 
-# Installation
+# Installing from the RPM
+
+Pre-built RPMs for RHEL 9 and RHEL 10 (x86_64) are attached to each release on the
+[SPAN releases page](https://github.com/Lupus-Maximus-Security/SPAN/releases). Download the
+RPM matching your distribution — `span-<version>-1.el9.x86_64.rpm` for RHEL 9 and rebuilds
+such as Rocky Linux, or `span-<version>-1.el10.x86_64.rpm` for RHEL 10.
+
+Install it with `dnf`, which also pulls in the required system packages such as `setools`
+and `pandoc`:
+
+```
+$ sudo dnf install ./span-1.0.0-1.el10.x86_64.rpm
+```
+
+The RPM bundles SPAN and all of its Python dependencies into a self-contained virtual
+environment under `/opt/span/venv`, so there is no `pip` step and nothing to activate. The
+setools Python bindings are shared from the system `setools` package.
+
+## Running SPAN from an RPM install
+
+The RPM installs two commands on your `PATH`:
+
+* `span-notebook` — launches Jupyter Notebook using the bundled environment. Any arguments
+  are passed straight through to `jupyter notebook`.
+* `span-module-notebooks` — runs the module notebook builder (see
+  [Module Notebook Builder](#module-notebook-builder) below).
+
+The example notebooks are installed read-only under `/usr/share/span/examples`. Copy them
+somewhere writable before opening them:
+
+```
+$ cp -r /usr/share/span/examples ~/span-examples
+$ cd ~/span-examples
+$ span-notebook
+```
+
+This opens a browser listing the directory contents; start with `Span Example.ipynb`.
+
+# Installing from Source
 
 SPAN is typically tested on newer Fedora versions and on RHEL 9 and rebuilds such as Rocky Linux.
 

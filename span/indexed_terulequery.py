@@ -115,19 +115,22 @@ class CriteriaSetOrValueDescriptor(CriteriaDescriptor):
     # target type.
     def __set__(self, obj, value):
         if not value:
-            self.instances[obj] = self.default_value
+            setattr(obj, self.name, self.default_value)
         elif self.regex and getattr(obj, self.regex, False):
-            self.instances[obj] = re.compile(value)
+            setattr(obj, self.name, re.compile(value))
         elif self.lookup_function:
-            lookup = getattr(obj.policy, self.lookup_function)
-            if isinstance(value, self.value_types):
-                self.instances[obj] = lookup(value)
+            if callable(self.lookup_function):
+                lookup = self.lookup_function
             else:
-                self.instances[obj] = set(lookup(v) for v in value)
+                lookup = getattr(obj.policy, self.lookup_function)
+            if isinstance(value, self.value_types):
+                setattr(obj, self.name, lookup(value))
+            else:
+                setattr(obj, self.name, set(lookup(v) for v in value))
         elif self.enum_class:
-            self.instances[obj] = set(self.enum_class.lookup(v) for v in value)
+            setattr(obj, self.name, set(self.enum_class.lookup(v) for v in value))
         else:
-            self.instances[obj] = set(value)
+            setattr(obj, self.name, set(value))
 
 
 

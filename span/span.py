@@ -606,13 +606,13 @@ class Policy(se.SELinuxPolicy):
         return sorted(se.RoleQuery(self, **kwargs).results())
 
     def types_in_role(self, role_name):
-        return sorted([str(x) for x in self.roles_query(name=role_name)[0].types()])
+        return sorted(wrap(x) for x in self.roles_query(name=role_name)[0].types())
 
     def roles_for_type(self, type_name):
         roles = sorted([str(x) for x in self.roles()])
         out = []
         for role in roles:
-            rtypes = self.types_in_role(role)
+            rtypes = [str(x) for x in self.types_in_role(role)]
             if type_name in rtypes:
                 out.append(role)
         return out
@@ -646,25 +646,26 @@ class Policy(se.SELinuxPolicy):
         :return: An list of Type and TypeAttribute objects
         """
 
-        return sorted([self.lookup_type_or_attr(x) for x in type_names])
+        return sorted([wrap(self.lookup_type_or_attr(x)) for x in type_names])
 
     def expand_attributes(self, tlist):
         expanded = set()
-        [expanded.update(x.expand()) for x in tlist]
+        for x in tlist:
+            expanded.update(wrap(y) for y in x.expand())
 
         return expanded
 
     def attributes_re(self, s, **kwargs):
         q = se.TypeAttributeQuery(self, name_regex=True, **kwargs)
         q.name = s
-        return sorted(q.results())
+        return [TypeAttribute(x) for x in sorted(q.results())]
 
     def attributes_for_type(self, tname):
         attrs = list(self.lookup_type(tname).attributes())
         return attrs
 
     def types_in_attribute(self, attr):
-        return sorted(self.attributes_re("^%s$" % attr)[0].expand())
+        return sorted(wrap(x) for x in self.attributes_re("^%s$" % attr)[0].expand())
 
     def new_types(self, base_policy):
         """
@@ -691,7 +692,7 @@ class Policy(se.SELinuxPolicy):
             if isinstance(t, str):
                 t = self.lookup_type(t)
             if self.domain_attribute in list(t.attributes()):
-                out.add(t)
+                out.add(wrap(t))
         return out
 
     def domains_with(

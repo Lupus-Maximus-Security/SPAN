@@ -78,7 +78,7 @@ def av_to_dict(av):
 def get_audit(c: Connection):
     parser = audit.AuditParser()
     parser.parse_string(get_audit_messages(c))
-    avs = [av_to_dict(x) for x in parser.to_access()][1:]
+    avs = [av_to_dict(x) for x in parser.to_access()]
     df = DataFrame(avs)
     return df
 
@@ -114,7 +114,7 @@ def print_audit2allow(c, args=""):
     print(audit2allow(c, **kwargs))
 
 @task
-def get_policy(c, policy_type="targeted", policy_fname="policy.33", fname="policy.33"):
+def get_policy(c, policy_type="targeted", policy_fname="policy.35", fname="policy.33"):
     tmp_path =  f"/tmp/fabric_transfer_{str(uuid.uuid4())}"
     
     c.sudo(f"cp /etc/selinux/{policy_type}/policy/{policy_fname} {tmp_path}")
