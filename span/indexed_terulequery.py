@@ -111,26 +111,42 @@ class CriteriaSetOrValueDescriptor(CriteriaDescriptor):
         # to check for the value types so that we can accept any iterable easily.
         self.value_types = value_types
 
+    # setools changed how its descriptors store per-instance values between
+    # 4.4 (RHEL 9) and 4.5 (RHEL 10): the older base class uses self.name as
+    # the bare attribute name, the newer one uses a private "_internal_" name.
+    # Routing __set__ through the base class's scheme therefore either
+    # recurses (4.4) or works (4.5). To stay version-agnostic this descriptor
+    # owns its storage end to end, keyed by a private per-instance attribute
+    # that is never itself a descriptor.
+    def __set_name__(self, owner, name):
+        self.storage_name = "_span_criteria_" + name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return getattr(obj, self.storage_name, self.default_value)
+
     # This lets us accept either a single name or a set of names for source and
     # target type.
     def __set__(self, obj, value):
         if not value:
-            setattr(obj, self.name, self.default_value)
+            result = self.default_value
         elif self.regex and getattr(obj, self.regex, False):
-            setattr(obj, self.name, re.compile(value))
+            result = re.compile(value)
         elif self.lookup_function:
             if callable(self.lookup_function):
                 lookup = self.lookup_function
             else:
                 lookup = getattr(obj.policy, self.lookup_function)
             if isinstance(value, self.value_types):
-                setattr(obj, self.name, lookup(value))
+                result = lookup(value)
             else:
-                setattr(obj, self.name, set(lookup(v) for v in value))
+                result = set(lookup(v) for v in value)
         elif self.enum_class:
-            setattr(obj, self.name, set(self.enum_class.lookup(v) for v in value))
+            result = set(self.enum_class.lookup(v) for v in value)
         else:
-            setattr(obj, self.name, set(value))
+            result = set(value)
+        setattr(obj, self.storage_name, result)
 
 
 
