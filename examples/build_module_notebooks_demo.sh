@@ -8,8 +8,10 @@
 #
 # Run module_notebooks_demo_rpm_download.sh first if examples/rpms/ is empty.
 #
-# Requires: policycoreutils (for SELinux policy + file_contexts), span
-#           installed in the active Python environment.
+# Requires: policycoreutils (for SELinux policy + file_contexts), and the
+#           span-module-notebooks command on PATH — provided by the SPAN
+#           RPM (/usr/bin/span-module-notebooks) or by an activated source
+#           install.
 
 set -euo pipefail
 shopt -s nullglob
@@ -74,7 +76,7 @@ echo ">> using policy:        $POLICY"
 echo ">> using file_contexts: $FILE_CONTEXTS"
 echo ">> output directory:    $OUTDIR"
 
-python -m span.module_notebook_builder \
+span-module-notebooks \
     --csv "$CSV" \
     --policy "$POLICY" \
     --file-contexts "$FILE_CONTEXTS" \
