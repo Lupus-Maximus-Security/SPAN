@@ -25,7 +25,7 @@
 %global _build_id_links none
 
 Name:           %{pyproject_name}
-Version:        1.1.0
+Version:        1.1.1
 Release:        1%{?dist}
 Summary:        Utilities for SELinux policy analysis in Jupyter Notebook
 
@@ -122,6 +122,9 @@ cp -a examples %{buildroot}%{_datadir}/%{pyproject_name}/
 %{_datadir}/%{pyproject_name}
 
 %changelog
+* Fri May 15 2026 Karl MacMillan <karl@lupusmaximus.com> - 1.1.1-1
+- Update to 1.1.1.
+
 * Thu May 14 2026 Karl MacMillan <karl@lupusmaximus.com> - 1.1.0-1
 - Update to 1.1.0.
 
