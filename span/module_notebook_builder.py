@@ -311,7 +311,12 @@ class _LibSELinuxFCResolver:
         selinux.matchpathcon_init(fc_path)
 
     def match(self, path, mode_bits=stat.S_IFREG):
-        rc, ctx = self._selinux.matchpathcon(path, mode_bits)
+        # Newer libselinux bindings raise FileNotFoundError on no match
+        # instead of returning a non-zero rc. Treat both as "no match".
+        try:
+            rc, ctx = self._selinux.matchpathcon(path, mode_bits)
+        except FileNotFoundError:
+            return None
         if rc != 0 or not ctx or ctx == "<<none>>":
             return None
         parts = ctx.split(":")
