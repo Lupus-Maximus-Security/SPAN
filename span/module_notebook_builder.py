@@ -302,19 +302,49 @@ def _literal_prefix_len(pattern):
 
 
 class _LibSELinuxFCResolver:
-    """File-contexts matcher backed by libselinux's matchpathcon."""
+    """File-contexts matcher backed by libselinux's selabel API.
+
+    Uses ``selabel_open`` rather than the older ``matchpathcon`` path so
+    ``SELABEL_OPT_VALIDATE`` stays off — file_contexts entries that
+    reference types/users/roles missing from the loaded policy then load
+    without warnings instead of being rejected as "invalid contexts".
+    """
 
     def __init__(self, fc_path):
         import selinux  # noqa: F401  (proved available before constructing)
         self._selinux = selinux
+        # The selinux_opt struct constructors live only on the low-level
+        # SWIG module; the high-level package re-exports the functions
+        # that consume the struct but not the struct helpers themselves.
+        self._low = selinux._selinux
         self.errors = []
-        selinux.matchpathcon_init(fc_path)
+        self._opt = None
+        self._handle = None
+
+        self._opt = self._low.new_selinux_opt()
+        self._low.selinux_opt_type_set(self._opt, selinux.SELABEL_OPT_PATH)
+        self._low.selinux_opt_value_set(self._opt, fc_path)
+        self._handle = selinux.selabel_open(
+            selinux.SELABEL_CTX_FILE, self._opt, 1,
+        )
+
+    def __del__(self):
+        # Best-effort cleanup; the constructor may have aborted before
+        # either handle was set.
+        if getattr(self, "_handle", None) is not None:
+            try:
+                self._selinux.selabel_close(self._handle)
+            except Exception:
+                pass
+        if getattr(self, "_opt", None) is not None:
+            try:
+                self._low.delete_selinux_opt(self._opt)
+            except Exception:
+                pass
 
     def match(self, path, mode_bits=stat.S_IFREG):
-        # Newer libselinux bindings raise FileNotFoundError on no match
-        # instead of returning a non-zero rc. Treat both as "no match".
         try:
-            rc, ctx = self._selinux.matchpathcon(path, mode_bits)
+            rc, ctx = self._selinux.selabel_lookup(self._handle, path, mode_bits)
         except FileNotFoundError:
             return None
         if rc != 0 or not ctx or ctx == "<<none>>":
