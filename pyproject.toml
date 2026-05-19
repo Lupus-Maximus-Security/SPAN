@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "span"
-version = "1.1.1"
+version = "1.1.2"
 description = "Utilities for SELinux policy analysis in Jupyter Notebook"
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
